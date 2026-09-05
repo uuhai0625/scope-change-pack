@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>仕様変更・追加見積り協議パック</title>
+<style>
+  :root {
+    --bg: #f4f5f9;
+    --panel: #ffffff;
+    --border: #dfe2ef;
+    --text: #262b3d;
+    --muted: #6b7189;
+    --accent: #4f46e5;
+    --accent-dark: #3f37c9;
+    --ok-bg: #eef0fc;
+    --locked: #a7abc0;
+    --best: #fff4d6;
+    --warn-bg: #fdecea;
+    --warn-text: #a13d2e;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+  }
+  header {
+    background: linear-gradient(135deg, #5b52ea, #3f37c9);
+    color: #fff;
+    padding: 32px 20px 26px;
+    text-align: center;
+  }
+  header h1 { margin: 0 0 8px; font-size: 1.55rem; }
+  header p { margin: 0; opacity: .92; font-size: .95rem; }
+  .disclaimer {
+    max-width: 800px; margin: 18px auto 0;
+    background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.4);
+    border-radius: 8px; padding: 10px 14px; font-size: .8rem;
+  }
+  main { max-width: 880px; margin: 0 auto; padding: 24px 16px 60px; }
+  section.card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+    padding: 20px; margin-bottom: 20px;
+  }
+  section.card h2 { margin: 0 0 4px; font-size: 1.05rem; display: flex; align-items: center; gap: 8px; }
+  section.card .desc { color: var(--muted); font-size: .85rem; margin: 0 0 14px; }
+  .badge { display: inline-block; font-size: .7rem; padding: 2px 8px; border-radius: 999px; background: #eee; color: var(--muted); font-weight: bold; }
+  .badge.pro { background: #fff1cc; color: #8a6100; }
+
+  label.field { display: block; margin-bottom: 12px; }
+  label.field .lbl { font-size: .83rem; font-weight: bold; }
+  label.field input, label.field select, label.field textarea {
+    width: 100%; margin-top: 5px; padding: 8px 10px;
+    border: 1px solid var(--border); border-radius: 8px;
+    font-size: .92rem; font-family: inherit; background: #fbfbfe;
+  }
+  label.field textarea { resize: vertical; min-height: 50px; }
+  .row2 { display: flex; gap: 12px; }
+  .row2 > * { flex: 1; }
+  .row3 { display: flex; gap: 12px; }
+  .row3 > * { flex: 1; }
+
+  .item-tab-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+  .item-tab { padding: 8px 14px; border-radius: 999px; border: 1px solid var(--border); background: #fbfbfe; cursor: pointer; font-size: .85rem; }
+  .item-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  select#f-status { font-weight: bold; }
+
+  .locked-panel {
+    border: 1px dashed var(--locked); border-radius: 10px; padding: 18px; text-align: center; color: var(--muted); background: #fafafd;
+  }
+  .locked-panel .feat-list { text-align: left; max-width: 480px; margin: 12px auto; font-size: .85rem; padding-left: 1.2em; }
+  .buy-btn {
+    display: inline-block; margin-top: 10px; background: var(--accent); color: #fff; font-weight: bold;
+    padding: 10px 22px; border-radius: 999px; text-decoration: none; font-size: .9rem;
+  }
+  .buy-btn:hover { background: var(--accent-dark); }
+
+  .btn-secondary {
+    background: #fff; border: 1px solid var(--border); color: var(--text);
+    padding: 8px 14px; border-radius: 8px; font-size: .82rem; cursor: pointer;
+  }
+  .btn-row { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+
+  table.compare { width: 100%; border-collapse: collapse; font-size: .86rem; margin-top: 4px; }
+  table.compare th, table.compare td { padding: 8px 10px; border: 1px solid var(--border); text-align: left; vertical-align: top; }
+  table.compare th { background: #f6f6fb; color: var(--muted); font-weight: bold; font-size: .8rem; width: 18%; }
+
+  .amount-box {
+    background: var(--ok-bg); border-radius: 10px; padding: 16px 18px; margin-top: 14px;
+    display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;
+  }
+  .amount-box .label { font-size: .85rem; color: var(--muted); }
+  .amount-box .value { font-size: 1.5rem; font-weight: bold; color: var(--accent-dark); }
+
+  .memo-box { background: #fbfbfe; border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-top: 14px; font-size: .87rem; white-space: pre-wrap; }
+
+  .history-item {
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 12px; margin-bottom: 8px;
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: .84rem;
+  }
+  .history-item .h-meta { color: var(--muted); font-size: .76rem; }
+  .history-item .h-del { background: none; border: none; color: #d0392b; cursor: pointer; font-size: .8rem; }
+
+  footer { max-width: 880px; margin: 0 auto; padding: 0 16px 40px; font-size: .76rem; color: var(--muted); }
+  footer .updated { font-weight: bold; }
+
+  @media print {
+    header .disclaimer, .btn-row, #pro-section, .buy-btn, #history-section .btn-row, .item-tab-row { display: none !important; }
+    body { background: #fff; }
+    header { background: #4f46e5 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    section.card { break-inside: avoid; border: 1px solid #ccc; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>仕様変更・追加見積り協議パック</h1>
+  <p>「これもついでに」への対応を、旧仕様との比較表・協議メモ・追加見積りにまとめて整理</p>
+  <div class="disclaimer">
+    ⚠️ 本ツールは入力された工数・単価をもとに金額を機械計算し、書式を整形するものです。契約条項の法的有効性判断や税務判断は行いません。金額・契約上の扱いは必要に応じて弁護士・税理士等の専門家にご確認ください。
+  </div>
+</header>
+
+<main>
+
+  <section class="card">
+    <h2>① 案件・単価情報</h2>
+    <div class="row2">
+      <label class="field">
+        <span class="lbl">案件名</span>
+        <input type="text" id="in-project" placeholder="例) ○○様 コーポレートサイト制作">
+      </label>
+      <label class="field">
+        <span class="lbl">依頼者・取引先名</span>
+        <input type="text" id="in-client" placeholder="例) 株式会社○○">
+      </label>
+    </div>
+    <div class="row3">
+      <label class="field">
+        <span class="lbl">単価の種類</span>
+        <select id="in-rate-type">
+          <option value="hourly">時間単価</option>
+          <option value="monthly">人月単価</option>
+        </select>
+      </label>
+      <label class="field">
+        <span class="lbl">単価(円)</span>
+        <input type="number" id="in-rate" value="5000" min="0" step="100">
+      </label>
+      <label class="field" id="hours-per-month-field">
+        <span class="lbl">1人月あたりの時間</span>
+        <input type="number" id="in-hours-per-month" value="160" min="1" step="1">
+      </label>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>② 変更内容を入力 <span class="badge" id="edition-badge">FREE版: 1件まで</span></h2>
+    <p class="desc">買い切り版では複数件を登録して一括管理できます。</p>
+
+    <div class="item-tab-row" id="itemTabs"></div>
+    <div id="itemForm"></div>
+  </section>
+
+  <section class="card">
+    <h2>③ 比較表・追加見積り</h2>
+    <table class="compare" id="compareTable"></table>
+    <div class="amount-box">
+      <div>
+        <div class="label">追加工数合計</div>
+        <div class="value" id="totalHours">0 時間</div>
+      </div>
+      <div>
+        <div class="label">追加費用(税別・概算)</div>
+        <div class="value" id="totalAmount">¥0</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card" id="memo-section">
+    <h2>④ 協議メモ</h2>
+    <p class="desc">IPA「情報システム・モデル取引・契約書」の変更協議フォーマットを参考に構成しています。</p>
+    <div class="memo-box" id="memoBox"></div>
+    <div class="btn-row">
+      <button class="btn-secondary" id="printBtn">🖨️ 協議メモ・見積りを印刷 / PDF保存</button>
+    </div>
+  </section>
+
+  <section class="card" id="pro-section">
+    <h2>⑤ 複数案件対応・履歴保存 <span class="badge pro">買い切り版</span></h2>
+    <div class="locked-panel">
+      <p>買い切り版(ダウンロード購入)では、以下の機能が使えます:</p>
+      <ul class="feat-list">
+        <li>変更内容を複数件登録して一括管理(1つの協議メモにまとめて出力)</li>
+        <li>返信テンプレ文面の自動生成(「本メールへの返信をもって着手条件とします」等)</li>
+        <li>入力内容をこのブラウザに保存し、案件ごとに呼び出して再利用</li>
+      </ul>
+      <a class="buy-btn" href="#" id="buyLink" target="_blank" rel="noopener">買い切り版を見る(BOOTH)</a>
+    </div>
+  </section>
+
+  <section class="card" id="reply-section" style="display:none;">
+    <h2>⑥ 返信テンプレ文面</h2>
+    <div class="memo-box" id="replyBox"></div>
+  </section>
+
+  <section class="card" id="history-section" style="display:none;">
+    <h2>⑦ 案件の保存</h2>
+    <div class="btn-row" style="margin-top:0;">
+      <button class="btn-secondary" id="saveBtn">現在の内容をこのブラウザに保存</button>
+      <button class="btn-secondary" id="loadBtn">保存済みの内容を読み込む</button>
+    </div>
+    <p class="desc" id="saveStatus" style="margin:8px 0 0;"></p>
+  </section>
+
+</main>
+
+<footer>
+  <p><span class="updated">最終更新: 2026年9月時点のIPA公式資料・フリーランス実態調査を参考に作成。</span></p>
+  <p>本ツールは完全にブラウザ内で動作し、入力した案件情報はどこにも送信されません(開発者ツールのネットワークタブで通信が発生しないことをご確認いただけます)。</p>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+
+  var EDITION = "free"; // "full" で買い切り完全版
+  var MAX_ITEMS = EDITION === "full" ? 10 : 1;
+
+  var STATUS_LIST = [
+    ["draft", "未提示"], ["sent", "提示済み"], ["agreed", "合意"], ["hold", "保留"]
+  ];
+
+  function newItem() {
+    return {
+      id: Date.now() + "-" + Math.random().toString(36).slice(2, 7),
+      title: "", oldSpec: "", newRequest: "",
+      hours: "", scheduleImpact: "", otherImpact: "", testHours: "",
+      status: "draft"
+    };
+  }
+
+  var items = [newItem()];
+  var activeItemId = items[0].id;
+
+  function getActiveItem() {
+    for (var i = 0; i < items.length; i++) if (items[i].id === activeItemId) return items[i];
+    return items[0];
+  }
+
+  function esc(s) { return (s || "").toString().replace(/[<>&]/g, function (c) { return { "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c]; }); }
+  function fmtYen(n) { return "¥" + Math.round(n).toLocaleString(); }
+
+  function renderTabs() {
+    var el = document.getElementById("itemTabs");
+    el.innerHTML = "";
+    items.forEach(function (it, i) {
+      var tab = document.createElement("div");
+      tab.className = "item-tab" + (it.id === activeItemId ? " active" : "");
+      tab.textContent = it.title || ("変更点" + (i + 1));
+      tab.addEventListener("click", function () { activeItemId = it.id; renderTabs(); renderForm(); renderAll(); });
+      el.appendChild(tab);
+    });
+    if (items.length < MAX_ITEMS) {
+      var add = document.createElement("div");
+      add.className = "item-tab";
+      add.textContent = "+ 変更点を追加";
+      add.addEventListener("click", function () {
+        var ni = newItem(); items.push(ni); activeItemId = ni.id; renderTabs(); renderForm(); renderAll();
+      });
+      el.appendChild(add);
+    } else if (EDITION !== "full") {
+      var lock = document.createElement("div");
+      lock.className = "item-tab";
+      lock.style.opacity = ".5";
+      lock.textContent = "🔒 2件目以降は買い切り版";
+      el.appendChild(lock);
+    }
+  }
+
+  function field(labelText, inputHtml) {
+    return '<label class="field"><span class="lbl">' + labelText + '</span>' + inputHtml + '</label>';
+  }
+
+  function renderForm() {
+    var it = getActiveItem();
+    var el = document.getElementById("itemForm");
+    var statusOptions = STATUS_LIST.map(function (s) {
+      return '<option value="' + s[0] + '"' + (it.status === s[0] ? " selected" : "") + '>' + s[1] + '</option>';
+    }).join("");
+
+    el.innerHTML =
+      field("変更点のタイトル", '<input id="f-title" value="' + esc(it.title) + '" placeholder="例) 会員マイページ機能の追加">') +
+      '<div class="row2">' +
+        field("旧仕様(既存の見積り範囲)", '<textarea id="f-oldSpec" placeholder="例) トップページ・会社概要・お問い合わせフォームのみ">' + esc(it.oldSpec) + '</textarea>') +
+        field("新要望(追加・変更内容)", '<textarea id="f-newRequest" placeholder="例) 会員登録・ログイン機能とマイページを追加したい">' + esc(it.newRequest) + '</textarea>') +
+      '</div>' +
+      '<div class="row3">' +
+        field("追加工数(時間)", '<input id="f-hours" type="number" min="0" step="0.5" value="' + esc(it.hours) + '">') +
+        field("テスト工数(時間)", '<input id="f-testHours" type="number" min="0" step="0.5" value="' + esc(it.testHours) + '">') +
+        field("進行ステータス", '<select id="f-status">' + statusOptions + '</select>') +
+      '</div>' +
+      '<div class="row2">' +
+        field("納期への影響", '<input id="f-scheduleImpact" value="' + esc(it.scheduleImpact) + '" placeholder="例) 納期を2週間後ろ倒し">') +
+        field("既存機能への影響", '<input id="f-otherImpact" value="' + esc(it.otherImpact) + '" placeholder="例) 会員限定ページの権限設計が必要">') +
+      '</div>';
+
+    Array.prototype.forEach.call(el.querySelectorAll("[id^=f-]"), function (input) {
+      var key = input.id.slice(2);
+      input.addEventListener("input", function () {
+        it[key] = input.value;
+        if (key === "title") renderTabs();
+        renderAll();
+      });
+      input.addEventListener("change", function () {
+        it[key] = input.value;
+        renderAll();
+      });
+    });
+  }
+
+  function getRate() {
+    var type = document.getElementById("in-rate-type").value;
+    var rate = parseFloat(document.getElementById("in-rate").value) || 0;
+    var hpm = parseFloat(document.getElementById("in-hours-per-month").value) || 160;
+    var hourlyRate = type === "monthly" ? rate / hpm : rate;
+    return hourlyRate;
+  }
+
+  function renderCompareTable() {
+    var table = document.getElementById("compareTable");
+    var rows = items.map(function (it) {
+      var statusLabel = (STATUS_LIST.filter(function (s) { return s[0] === it.status; })[0] || ["", ""])[1];
+      return '<tr>' +
+        '<th>変更点</th><td>' + esc(it.title || "(未入力)") + '<br><span style="color:var(--muted);font-size:.78rem;">状況: ' + statusLabel + '</span></td>' +
+        '</tr><tr><th>旧仕様</th><td>' + esc(it.oldSpec || "-") + '</td></tr>' +
+        '<tr><th>新要望</th><td>' + esc(it.newRequest || "-") + '</td></tr>' +
+        '<tr><th>影響範囲</th><td>納期: ' + esc(it.scheduleImpact || "-") + ' / 既存機能: ' + esc(it.otherImpact || "-") + '</td></tr>' +
+        '<tr><th>工数</th><td>作業 ' + (it.hours || 0) + '時間 + テスト ' + (it.testHours || 0) + '時間</td></tr>';
+    }).join('<tr><td colspan="2" style="border:none;height:8px;"></td></tr>');
+    table.innerHTML = rows;
+  }
+
+  function renderAmount() {
+    var hourlyRate = getRate();
+    var totalHours = items.reduce(function (sum, it) {
+      return sum + (parseFloat(it.hours) || 0) + (parseFloat(it.testHours) || 0);
+    }, 0);
+    var totalAmount = totalHours * hourlyRate;
+    document.getElementById("totalHours").textContent = totalHours + " 時間";
+    document.getElementById("totalAmount").textContent = fmtYen(totalAmount);
+    return { totalHours: totalHours, totalAmount: totalAmount, hourlyRate: hourlyRate };
+  }
+
+  function renderMemo(sums) {
+    var project = document.getElementById("in-project").value || "(案件名未入力)";
+    var client = document.getElementById("in-client").value || "(依頼者未入力)";
+    var today = new Date();
+    var dateStr = today.getFullYear() + "年" + (today.getMonth() + 1) + "月" + today.getDate() + "日";
+
+    var lines = [];
+    lines.push("仕様変更協議メモ");
+    lines.push("作成日: " + dateStr);
+    lines.push("案件名: " + project);
+    lines.push("依頼者: " + client);
+    lines.push("");
+    items.forEach(function (it, i) {
+      var statusLabel = (STATUS_LIST.filter(function (s) { return s[0] === it.status; })[0] || ["", ""])[1];
+      lines.push("■ 変更点" + (i + 1) + ": " + (it.title || "(未入力)") + "(状況: " + statusLabel + ")");
+      lines.push("・旧仕様: " + (it.oldSpec || "-"));
+      lines.push("・新要望: " + (it.newRequest || "-"));
+      lines.push("・納期への影響: " + (it.scheduleImpact || "-"));
+      lines.push("・既存機能への影響: " + (it.otherImpact || "-"));
+      lines.push("・追加工数: 作業" + (it.hours || 0) + "時間 + テスト" + (it.testHours || 0) + "時間");
+      lines.push("");
+    });
+    lines.push("■ 追加見積り(概算・税別)");
+    lines.push("追加工数合計: " + sums.totalHours + "時間");
+    lines.push("単価: " + fmtYen(sums.hourlyRate) + "/時間換算");
+    lines.push("追加費用: " + fmtYen(sums.totalAmount));
+    lines.push("");
+    lines.push("※ 上記金額は入力された工数・単価に基づく概算計算です。最終的な契約金額は別途協議のうえ確定します。");
+
+    document.getElementById("memoBox").textContent = lines.join("\n");
+    return lines;
+  }
+
+  function renderReply(sums) {
+    var replySection = document.getElementById("reply-section");
+    if (EDITION !== "full") { replySection.style.display = "none"; return; }
+    replySection.style.display = "block";
+    var project = document.getElementById("in-project").value || "本件";
+    var titles = items.map(function (it) { return it.title; }).filter(Boolean).join("、");
+    var text =
+      project + "について、ご要望いただいた内容(" + (titles || "追加のご要望") + ")を反映した協議メモ・追加見積りをお送りいたします。\n\n" +
+      "追加工数: " + sums.totalHours + "時間 / 追加費用(税別・概算): " + fmtYen(sums.totalAmount) + "\n\n" +
+      "内容にご了承いただける場合、本メールへのご返信をもって着手条件とさせていただきます。\n" +
+      "ご不明点やご要望と異なる点がございましたら、着手前にお知らせください。";
+    document.getElementById("replyBox").textContent = text;
+  }
+
+  function renderAll() {
+    renderCompareTable();
+    var sums = renderAmount();
+    renderMemo(sums);
+    renderReply(sums);
+  }
+
+  document.getElementById("in-project").addEventListener("input", renderAll);
+  document.getElementById("in-client").addEventListener("input", renderAll);
+  document.getElementById("in-rate").addEventListener("input", renderAll);
+  document.getElementById("in-hours-per-month").addEventListener("input", renderAll);
+  document.getElementById("in-rate-type").addEventListener("change", function () {
+    document.getElementById("hours-per-month-field").style.display = this.value === "monthly" ? "block" : "none";
+    renderAll();
+  });
+  document.getElementById("hours-per-month-field").style.display = "none";
+
+  document.getElementById("printBtn").addEventListener("click", function () { window.print(); });
+
+  document.getElementById("edition-badge").textContent = EDITION === "full" ? "買い切り版: 複数件対応" : "FREE版: 1件まで";
+  if (EDITION === "full") {
+    document.getElementById("pro-section").style.display = "none";
+    document.getElementById("history-section").style.display = "block";
+  }
+
+  // ============ 保存(買い切り版) ============
+  var SAVE_KEY = "scope_change_pack_cases_v1";
+  var saveBtn = document.getElementById("saveBtn");
+  var loadBtn = document.getElementById("loadBtn");
+  if (saveBtn) {
+    saveBtn.addEventListener("click", function () {
+      var data = {
+        project: document.getElementById("in-project").value,
+        client: document.getElementById("in-client").value,
+        rateType: document.getElementById("in-rate-type").value,
+        rate: document.getElementById("in-rate").value,
+        hoursPerMonth: document.getElementById("in-hours-per-month").value,
+        items: items
+      };
+      localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+      document.getElementById("saveStatus").textContent = "保存しました(" + new Date().toLocaleString() + ")";
+    });
+    loadBtn.addEventListener("click", function () {
+      var raw = localStorage.getItem(SAVE_KEY);
+      if (!raw) { document.getElementById("saveStatus").textContent = "保存されたデータがありません。"; return; }
+      try {
+        var data = JSON.parse(raw);
+        document.getElementById("in-project").value = data.project || "";
+        document.getElementById("in-client").value = data.client || "";
+        document.getElementById("in-rate-type").value = data.rateType || "hourly";
+        document.getElementById("in-rate").value = data.rate || 5000;
+        document.getElementById("in-hours-per-month").value = data.hoursPerMonth || 160;
+        document.getElementById("hours-per-month-field").style.display = data.rateType === "monthly" ? "block" : "none";
+        if (data.items && data.items.length) {
+          items = data.items; activeItemId = items[0].id;
+        }
+        renderTabs(); renderForm(); renderAll();
+        document.getElementById("saveStatus").textContent = "読み込みました。";
+      } catch (e) { document.getElementById("saveStatus").textContent = "読み込みに失敗しました。"; }
+    });
+  }
+
+  renderTabs();
+  renderForm();
+  renderAll();
+})();
+</script>
+</body>
+</html>
