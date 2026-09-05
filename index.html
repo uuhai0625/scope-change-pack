@@ -47,7 +47,7 @@
   }
   section.card h2 { margin: 0 0 4px; font-size: 1.05rem; display: flex; align-items: center; gap: 8px; }
   section.card .desc { color: var(--muted); font-size: .85rem; margin: 0 0 14px; }
-  .badge { display: inline-block; font-size: .7rem; padding: 2px 8px; border-radius: 999px; background: #eee; color: var(--muted); font-weight: bold; }
+  .badge { display: inline-block; font-size: .7rem; padding: 2px 8px; border-radius: 999px; background: #eee; color: #4a4a4a; font-weight: bold; }
   .badge.pro { background: #fff1cc; color: #8a6100; }
 
   label.field { display: block; margin-bottom: 12px; }
@@ -85,8 +85,8 @@
   }
   .btn-row { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
 
-  table.compare { width: 100%; border-collapse: collapse; font-size: .86rem; margin-top: 4px; }
-  table.compare th, table.compare td { padding: 8px 10px; border: 1px solid var(--border); text-align: left; vertical-align: top; }
+  table.compare { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: .86rem; margin-top: 4px; }
+  table.compare th, table.compare td { padding: 8px 10px; border: 1px solid var(--border); text-align: left; vertical-align: top; word-break: break-word; overflow-wrap: break-word; }
   table.compare th { background: #f6f6fb; color: var(--muted); font-weight: bold; font-size: .8rem; width: 18%; }
 
   .amount-box {
@@ -111,10 +111,11 @@
   footer .updated { font-weight: bold; }
 
   @media print {
-    header .disclaimer, .btn-row, #pro-section, .buy-btn, #history-section .btn-row, .item-tab-row { display: none !important; }
     body { background: #fff; }
-    header { background: #4f46e5 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    section.card { break-inside: avoid; border: 1px solid #ccc; }
+    header, #project-section, #item-input-section, #compare-section,
+    #pro-section, #reply-section, #history-section { display: none !important; }
+    #memo-section { border: none; padding: 0; }
+    #memo-section .desc, #printBtn { display: none !important; }
   }
 </style>
 </head>
@@ -130,7 +131,7 @@
 
 <main>
 
-  <section class="card">
+  <section class="card" id="project-section">
     <h2>① 案件・単価情報</h2>
     <div class="row2">
       <label class="field">
@@ -161,7 +162,7 @@
     </div>
   </section>
 
-  <section class="card">
+  <section class="card" id="item-input-section">
     <h2>② 変更内容を入力 <span class="badge" id="edition-badge">FREE版: 1件まで</span></h2>
     <p class="desc">買い切り版では複数件を登録して一括管理できます。</p>
 
@@ -169,7 +170,7 @@
     <div id="itemForm"></div>
   </section>
 
-  <section class="card">
+  <section class="card" id="compare-section">
     <h2>③ 比較表・追加見積り</h2>
     <table class="compare" id="compareTable"></table>
     <div class="amount-box">
@@ -255,7 +256,15 @@
     return items[0];
   }
 
-  function esc(s) { return (s || "").toString().replace(/[<>&]/g, function (c) { return { "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c]; }); }
+  function esc(s) { return (s || "").toString().replace(/[<>&"']/g, function (c) { return { "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+
+  function makeKeyboardClickable(el) {
+    el.tabIndex = 0;
+    el.setAttribute("role", "button");
+    el.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); el.click(); }
+    });
+  }
   function fmtYen(n) { return "¥" + Math.round(n).toLocaleString(); }
 
   function renderTabs() {
@@ -266,6 +275,7 @@
       tab.className = "item-tab" + (it.id === activeItemId ? " active" : "");
       tab.textContent = it.title || ("変更点" + (i + 1));
       tab.addEventListener("click", function () { activeItemId = it.id; renderTabs(); renderForm(); renderAll(); });
+      makeKeyboardClickable(tab);
       el.appendChild(tab);
     });
     if (items.length < MAX_ITEMS) {
@@ -275,6 +285,7 @@
       add.addEventListener("click", function () {
         var ni = newItem(); items.push(ni); activeItemId = ni.id; renderTabs(); renderForm(); renderAll();
       });
+      makeKeyboardClickable(add);
       el.appendChild(add);
     } else if (EDITION !== "full") {
       var lock = document.createElement("div");
@@ -445,11 +456,16 @@
         hoursPerMonth: document.getElementById("in-hours-per-month").value,
         items: items
       };
-      localStorage.setItem(SAVE_KEY, JSON.stringify(data));
-      document.getElementById("saveStatus").textContent = "保存しました(" + new Date().toLocaleString() + ")";
+      try {
+        localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+        document.getElementById("saveStatus").textContent = "保存しました(" + new Date().toLocaleString() + ")";
+      } catch (e) {
+        document.getElementById("saveStatus").textContent = "保存に失敗しました(ブラウザの保存容量やプライベートブラウジング設定をご確認ください)。";
+      }
     });
     loadBtn.addEventListener("click", function () {
-      var raw = localStorage.getItem(SAVE_KEY);
+      var raw;
+      try { raw = localStorage.getItem(SAVE_KEY); } catch (e) { document.getElementById("saveStatus").textContent = "読み込みに失敗しました。"; return; }
       if (!raw) { document.getElementById("saveStatus").textContent = "保存されたデータがありません。"; return; }
       try {
         var data = JSON.parse(raw);
@@ -460,7 +476,12 @@
         document.getElementById("in-hours-per-month").value = data.hoursPerMonth || 160;
         document.getElementById("hours-per-month-field").style.display = data.rateType === "monthly" ? "block" : "none";
         if (data.items && data.items.length) {
-          items = data.items; activeItemId = items[0].id;
+          items = data.items.map(function (it) {
+            var base = newItem();
+            for (var k in base) { if (it && it[k] !== undefined) base[k] = it[k]; }
+            return base;
+          });
+          activeItemId = items[0].id;
         }
         renderTabs(); renderForm(); renderAll();
         document.getElementById("saveStatus").textContent = "読み込みました。";
