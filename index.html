@@ -6,6 +6,7 @@
     var GA_ID = 'G-BQ4NYNLN5Y';
     var isLocalDev = ['localhost', '127.0.0.1', ''].includes(location.hostname);
     if (isLocalDev) return;
+    try { if (/[?&]no_ga=0/.test(location.search)) localStorage.removeItem('no_ga'); if (/[?&]no_ga=1/.test(location.search)) localStorage.setItem('no_ga', '1'); if (localStorage.getItem('no_ga') === '1') return; } catch (e) {}
     var s = document.createElement('script');
     s.async = true;
     s.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA_ID;
